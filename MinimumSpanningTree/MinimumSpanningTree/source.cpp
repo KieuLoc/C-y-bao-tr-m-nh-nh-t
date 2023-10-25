@@ -31,6 +31,8 @@ struct stWeight {
 vector<stNote> vtNodeData;
 vector<stWeight> vtWeightData;
 vector<stWeight> vtMST;
+vector<stWeight> vtMSTSort;
+
 int iNodeNo = 0;
 int iEdgeNo = 0;
 int iTotalWeight = 0;
@@ -185,29 +187,19 @@ bool checkPathExist()
 
 bool getMinSpanningTree(int iStartNode)
 {
-	bChkEnableNode[iStartNode] = true;
-	int arrWeight[1024] = { 0 };
-	int iCnt = 0;
-	int iWBefore = 0;
 	bool bRet = false;
+	bChkEnableNode[iStartNode] = true;
 	try
 	{
-		bRet = checkPathExist();
-		if (bRet == false)
-		{
-			throw std::exception();
-		}
 		while (vtMST.size() < size_t(iNodeNo - 1))
 		{
 			// Chon ra canh co trong so ngan nhat co x thuoc V va y thuoc V(MST)
 			int min_w = INT_MAX;
 			int X = 99;
 			int Y = 99;
-			iCnt = 0;
-			iWBefore = 0;
 			for (int i = 1; i <= iNodeNo; i++)
 			{
-				if (bChkEnableNode[i] == true)
+				if (bChkEnableNode[i] == true || bRet == true)
 				{
 					// duyet danh sach ke cua dinh i
 					for (int k = 1; k <= iEdgeNo; k++)
@@ -218,37 +210,22 @@ bool getMinSpanningTree(int iStartNode)
 							int trongso = vtWeightData[k - 1].sWeight;
 							if (bChkEnableNode[j] == false && trongso < min_w)
 							{
-								if (iCnt == 0)
-								{
-									min_w = trongso;
-									X = j;
-									Y = i;
-									iCnt++;
-									iWBefore = arrWeight[i] + trongso;
-								}
-								else if (iCnt != 0 && X == j)
-								{
-									if (arrWeight[i] + trongso < iWBefore)
-									{
-										min_w = trongso;
-										X = j;
-										Y = i;
-										iWBefore = arrWeight[i] + trongso;
-									}
-								}
-								else
-								{
-									// Do Nothing
-								}
+								min_w = trongso;
+								X = j;
+								Y = i;
 							}
+						}
+						else
+						{
+							// Do Nothing
 						}
 					}
 				}
 			}
 			vtMST.push_back({ Y, X, min_w });
 			iTotalWeight += min_w;
-			arrWeight[X] = arrWeight[Y] + min_w;
 			bChkEnableNode[X] = true; // cho dinh X vao V[MST]
+			bRet = true;
 		}
 		return true;
 	}
@@ -284,10 +261,23 @@ bool outputData(string sOutputFile)
 		fputs(strTotalWeight.c_str(), iFile);
 		fputs("\n", iFile);
 
-		for (size_t i = 0; i < vtMST.size(); i++)
+		for (int i = 2; i <= vtMST.size() + 1; i++)
 		{
-			std::string sFirstIdex = mapData(vtMST[i].firstIndex);
-			std::string sSecondIndex = mapData(vtMST[i].secondIndex);
+			for (int k = 0; k < vtMST.size(); k++)
+			{
+				int sSecondIndex = vtMST[k].secondIndex;
+				if (sSecondIndex == i)
+				{
+					vtMSTSort.push_back(vtMST[k]);
+					break;
+				}
+			}
+		}
+
+		for (size_t i = 0; i < vtMSTSort.size(); i++)
+		{
+			std::string sFirstIdex = mapData(vtMSTSort[i].firstIndex);
+			std::string sSecondIndex = mapData(vtMSTSort[i].secondIndex);
 			fputs(sFirstIdex.c_str(), iFile);
 			fputs(", ", iFile);
 			fputs(sSecondIndex.c_str(), iFile);
@@ -322,13 +312,15 @@ string mapData(int iIndex)
 int main( int argc, char* argv[] )
 {
 	bool bRet = false;
-	std::string sInputFile = argv[1];
-	std::string sOutputFile = argv[2];
 #if 0
 	std::string sInputFile = "C:\\test\\Input.txt";
 	std::string sOutputFile = "C:\\test\\Output.txt";
 	memset(bChkEnableNode, false, sizeof(bChkEnableNode));
 #endif
+
+	std::string sInputFile = argv[1];
+	std::string sOutputFile = argv[2];
+
 	std::regex backslashRegex( "\\\\" );
 	sInputFile = std::regex_replace( sInputFile, backslashRegex, "\\\\" );
 	sOutputFile = std::regex_replace( sOutputFile, backslashRegex, "\\\\" );
